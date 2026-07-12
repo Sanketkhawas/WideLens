@@ -1,0 +1,15 @@
+uploads/customers/.gitkeep
+uploads/sales/.gitkeep
+uploads/competitors/.gitkeep
+uploads/demographics/.gitkeep
+uploads/temp/.gitkeep
+
+processed_data/cleaned/.gitkeep
+processed_data/engineered/.gitkeep
+processed_data/geo/.gitkeep
+processed_data/json/.gitkeep
+
+reports/exported_reports/.gitkeep
+
+static/images/.gitkeep
+static/icons/.gitkeep

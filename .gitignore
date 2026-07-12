@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual Environment
+venv/
+.env
+
+# VS Code
+.vscode/
+
+# Database
+*.db
+
+# ML Models
+*.pkl
+
+# Generated Reports
+reports/exported_reports/
+
+# Uploaded Files
+uploads/customers/*
+uploads/sales/*
+uploads/competitors/*
+uploads/demographics/*
+uploads/temp/*
+
+# Processed Data
+processed_data/
+
+# Logs
+*.log
