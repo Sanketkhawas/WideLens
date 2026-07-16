@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Business Expansion Advisor</title>
+    <!-- Google Fonts - Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap Icons CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body>
+    <!-- App Container -->
+    <div class="app-container">
+        
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-logo">
+                    <i class="bi bi-cpu-fill"></i>
+                </div>
+                <div class="brand-title">
+                    <h2>Expansion AI</h2>
+                    <span>Location Intelligence</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-menu">
+                <ul>
+                    <li class="active" data-page="dashboard">
+                        <a href="#dashboard">
+                            <i class="bi bi-grid-1x2-fill"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li data-page="customer">
+                        <a href="#customer">
+                            <i class="bi bi-people-fill"></i>
+                            <span>Customer Analytics</span>
+                        </a>
+                    </li>
+                    <li data-page="sales">
+                        <a href="#sales">
+                            <i class="bi bi-graph-up-arrow"></i>
+                            <span>Sales Analytics</span>
+                        </a>
+                    </li>
+                    <li data-page="location">
+                        <a href="#location">
+                            <i class="bi bi-geo-alt-fill"></i>
+                            <span>Location Finder</span>
+                            <span class="badge badge-success">AI</span>
+                        </a>
+                    </li>
+                    <li data-page="reports">
+                        <a href="#reports">
+                            <i class="bi bi-file-earmark-bar-graph-fill"></i>
+                            <span>Reports</span>
+                        </a>
+                    </li>
+                    <li data-page="profile">
+                        <a href="#profile">
+                            <i class="bi bi-person-badge-fill"></i>
+                            <span>Profile Settings</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="user-card-mini">
+                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" alt="Profile" referrerPolicy="no-referrer">
+                    <div class="user-info">
+                        <h4>Jane Doe</h4>
+                        <span>SaaS Admin</span>
+                    </div>
+                </div>
+                <a href="#logout" class="logout-btn" id="logoutBtn">
+                    <i class="bi bi-box-arrow-left"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Overlay for mobile sidebar -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            
+            <!-- Top Header -->
+            <header class="top-header">
+                <div class="header-left">
+                    <button class="toggle-sidebar-btn" id="toggleSidebar" aria-label="Toggle Sidebar">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <div class="search-box">
+                        <i class="bi bi-search"></i>
+                        <input type="text" placeholder="Search analytics, regions, metrics..." id="searchInput">
+                    </div>
+                </div>
+
+                <div class="header-right">
+                    <!-- Real-time Clock -->
+                    <div class="header-datetime">
+                        <i class="bi bi-calendar3"></i>
+                        <span id="currentDateTime">July 13, 2026</span>
+                    </div>
+
+                    <!-- Notification Dropdown -->
+                    <div class="header-action-dropdown">
+                        <button class="header-action-btn" id="notificationBtn" aria-label="Notifications">
+                            <i class="bi bi-bell"></i>
+                            <span class="badge-dot"></span>
+                        </button>
+                        <div class="dropdown-menu" id="notificationMenu">
+                            <div class="dropdown-header">
+                                <h3>Notifications</h3>
+                                <button class="mark-all-read">Clear All</button>
+                            </div>
+                            <ul class="notification-list">
+                                <li class="unread">
+                                    <div class="notif-icon notif-success">
+                                        <i class="bi bi-check-circle-fill"></i>
+                                    </div>
+                                    <div class="notif-info">
+                                        <p><strong>AI model retrained successfully!</strong> Location parameters updated.</p>
+                                        <span>Just now</span>
+                                    </div>
+                                </li>
+                                <li class="unread">
+                                    <div class="notif-icon notif-warning">
+                                        <i class="bi bi-exclamation-triangle-fill"></i>
+                                    </div>
+                                    <div class="notif-info">
+                                        <p><strong>Competition Warning:</strong> New competitor spotted in Brooklyn District.</p>
+                                        <span>2 hours ago</span>
+                                    </div>
+                                </li>
+                                <li>
+                                    <div class="notif-icon notif-info">
+                                        <i class="bi bi-file-earmark-arrow-up-fill"></i>
+                                    </div>
+                                    <div class="notif-info">
+                                        <p><strong>Dataset Imported:</strong> Sales_Q2_2026.csv was processed.</p>
+                                        <span>1 day ago</span>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Settings Trigger -->
+                    <button class="header-action-btn" id="settingsBtn" aria-label="Settings">
+                        <i class="bi bi-gear"></i>
+                    </button>
+
+                    <!-- Divider -->
+                    <span class="header-divider"></span>
+
+                    <!-- Profile Info -->
+                    <div class="header-profile">
+                        <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" alt="Jane Doe" referrerPolicy="no-referrer" id="profileImageTrigger">
+                        <div class="profile-text">
+                            <span class="profile-name">Jane Doe</span>
+                            <span class="profile-role">Expansion Lead</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Body -->
+            <div class="dashboard-body" id="dashboardBody">
+                
+                <!-- Page Title -->
+                <div class="page-title-section">
+                    <div class="title-left">
+                        <h1>Business Dashboard</h1>
+                        <p class="subtitle">AI Business Expansion & Location Intelligence System Control Panel</p>
+                    </div>
+                    <nav class="breadcrumb">
+                        <ul>
+                            <li><a href="#">Home</a></li>
+                            <li class="separator"><i class="bi bi-chevron-right"></i></li>
+                            <li class="active">Dashboard</li>
+                        </ul>
+                    </nav>
+                </div>
+
+                <!-- KPI Grid -->
+                <div class="kpi-grid">
+                    <!-- KPI Card 1 -->
+                    <div class="kpi-card fade-in-up" id="kpi-customers">
+                        <div class="kpi-card-header">
+                            <span class="kpi-title">Total Customers</span>
+                            <div class="kpi-icon-container kpi-blue">
+                                <i class="bi bi-people"></i>
+                            </div>
+                        </div>
+                        <div class="kpi-card-body">
+                            <h3 class="kpi-value" data-value="12480">0</h3>
+                            <div class="kpi-meta text-success">
+                                <i class="bi bi-arrow-up-short"></i>
+                                <span class="kpi-trend">14.2%</span>
+                                <span class="kpi-period">vs last month</span>
+                            </div>
+                        </div>
+                        <div class="kpi-progress">
+                            <div class="progress-bar bar-blue" style="width: 82%"></div>
+                        </div>
+                    </div>
+
+                    <!-- KPI Card 2 -->
+                    <div class="kpi-card fade-in-up" id="kpi-revenue">
+                        <div class="kpi-card-header">
+                            <span class="kpi-title">Monthly Revenue</span>
+                            <div class="kpi-icon-container kpi-purple">
+                                <i class="bi bi-currency-dollar"></i>
+                            </div>
+                        </div>
+                        <div class="kpi-card-body">
+                            <h3 class="kpi-value-prefix" style="display:inline; margin-right: 2px;">$</h3><h3 class="kpi-value" style="display:inline;" data-value="142500">0</h3>
+                            <div class="kpi-meta text-success">
+                                <i class="bi bi-arrow-up-short"></i>
+                                <span class="kpi-trend">18.7%</span>
+                                <span class="kpi-period">vs last month</span>
+                            </div>
+                        </div>
+                        <div class="kpi-progress">
+                            <div class="progress-bar bar-purple" style="width: 89%"></div>
+                        </div>
+                    </div>
+
+                    <!-- KPI Card 3 -->
+                    <div class="kpi-card fade-in-up" id="kpi-sales">
+                        <div class="kpi-card-header">
+                            <span class="kpi-title">Product Sales</span>
+                            <div class="kpi-icon-container kpi-success">
+                                <i class="bi bi-cart-check"></i>
+                            </div>
+                        </div>
+                        <div class="kpi-card-body">
+                            <h3 class="kpi-value" data-value="8920">0</h3>
+                            <div class="kpi-meta text-danger">
+                                <i class="bi bi-arrow-down-short"></i>
+                                <span class="kpi-trend">2.4%</span>
+                                <span class="kpi-period">vs last week</span>
+                            </div>
+                        </div>
+                        <div class="kpi-progress">
+                            <div class="progress-bar bar-success" style="width: 65%"></div>
+                        </div>
+                    </div>
+
+                    <!-- KPI Card 4 -->
+                    <div class="kpi-card fade-in-up" id="kpi-area">
+                        <div class="kpi-card-header">
+                            <span class="kpi-title">Recommended Area</span>
+                            <div class="kpi-icon-container kpi-warning">
+                                <i class="bi bi-geo-alt"></i>
+                            </div>
+                        </div>
+                        <div class="kpi-card-body">
+                            <h3 class="kpi-value-text">Manhattan N.</h3>
+                            <div class="kpi-meta text-success">
+                                <i class="bi bi-patch-check-fill"></i>
+                                <span class="kpi-trend">94% Match</span>
+                                <span class="kpi-period">AI verified</span>
+                            </div>
+                        </div>
+                        <div class="kpi-progress">
+                            <div class="progress-bar bar-warning" style="width: 94%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Middle Grid: AI Recommendation Card & Highlights -->
+                <div class="intelligence-section">
+                    <!-- AI Expansion Recommendation Panel -->
+                    <div class="ai-recommendation-card fade-in-up">
+                        <div class="ai-badge-header">
+                            <span class="ai-pill"><i class="bi bi-cpu"></i> AI GENERATED RECOMMENDATION</span>
+                            <span class="ai-timestamp">Last Updated: Just Now</span>
+                        </div>
+                        
+                        <div class="recommendation-hero">
+                            <div class="hero-left">
+                                <span class="label">BEST EXPANSION ZONE</span>
+                                <h2 id="recLocationName">North Manhattan District</h2>
+                                <p class="description">Identified as the optimal district for your next physical store outlet based on deep multi-factor spatial analysis and demographic modeling.</p>
+                            </div>
+                            <div class="hero-right">
+                                <div class="score-circle-container">
+                                    <svg class="score-svg" viewBox="0 0 100 100">
+                                        <circle class="score-bg" cx="50" cy="50" r="42"></circle>
+                                        <circle class="score-progress" cx="50" cy="50" r="42" style="stroke-dashoffset: 26.3;"></circle>
+                                    </svg>
+                                    <div class="score-content">
+                                        <span class="score-number">94</span>
+                                        <span class="score-label">MATCH SCORE</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Analysis Metrics -->
+                        <div class="metrics-row">
+                            <div class="metric-item">
+                                <span class="metric-label">Expected Monthly Revenue</span>
+                                <span class="metric-value text-primary" id="recExpectedRevenue">$185,000</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">Risk Assessment</span>
+                                <span class="metric-value text-success" id="recRiskLevel">Low-Medium</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">Local Competition</span>
+                                <span class="metric-value text-warning" id="recCompetition">Moderate</span>
+                            </div>
+                            <div class="metric-item">
+                                <span class="metric-label">AI System Confidence</span>
+                                <span class="metric-value text-purple" id="recConfidence">95%</span>
+                            </div>
+                        </div>
+
+                        <!-- Key Rationale List -->
+                        <div class="rationale-section">
+                            <h3>Core Driving Factors</h3>
+                            <div class="rationale-grid">
+                                <div class="rationale-card">
+                                    <div class="rationale-icon r-blue">
+                                        <i class="bi bi-people-fill"></i>
+                                    </div>
+                                    <div class="rationale-info">
+                                        <h4>High Customer Density</h4>
+                                        <p>Over 14,000 target demographic residents within a 15-minute walking radius.</p>
+                                    </div>
+                                </div>
+                                <div class="rationale-card">
+                                    <div class="rationale-icon r-success">
+                                        <i class="bi bi-shield-check"></i>
+                                    </div>
+                                    <div class="rationale-info">
+                                        <h4>Low Market Saturation</h4>
+                                        <p>Only two secondary competitors in the region, with no dominant industry leaders.</p>
+                                    </div>
+                                </div>
+                                <div class="rationale-card">
+                                    <div class="rationale-icon r-warning">
+                                        <i class="bi bi-piggy-bank-fill"></i>
+                                    </div>
+                                    <div class="rationale-info">
+                                        <h4>Affordable Commercial Rent</h4>
+                                        <p>Average commercial lease rate is 12% lower than adjacent downtown zones.</p>
+                                    </div>
+                                </div>
+                                <div class="rationale-card">
+                                    <div class="rationale-icon r-purple">
+                                        <i class="bi bi-wallet2"></i>
+                                    </div>
+                                    <div class="rationale-info">
+                                        <h4>High Purchasing Power</h4>
+                                        <p>Average household income in Manhattan N. is $112,500 (+18% above city average).</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="ai-card-actions">
+                            <button class="btn btn-primary" id="viewDetailsBtn">
+                                <i class="bi bi-info-circle-fill"></i> View Spatial Intelligence Report
+                            </button>
+                            <button class="btn btn-outline" id="simulateBtn">
+                                <i class="bi bi-play-circle"></i> Run What-If Simulator
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Grid Section -->
+                <div class="charts-section-grid">
+                    <!-- Line Chart Card -->
+                    <div class="chart-card fade-in-up">
+                        <div class="chart-card-header">
+                            <div>
+                                <h3>Monthly Revenue Analytics</h3>
+                                <p class="chart-subtitle">Historical performance & next-quarter forecast modeling</p>
+                            </div>
+                            <div class="chart-actions">
+                                <select class="chart-filter-select" id="revenueFilter">
+                                    <option value="6">Last 6 Months</option>
+                                    <option value="12" selected>Last 12 Months</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="monthlyRevenueChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Pie and Bar charts -->
+                    <div class="charts-column-right">
+                        <!-- Customer Distribution -->
+                        <div class="chart-card fade-in-up">
+                            <div class="chart-card-header">
+                                <div>
+                                    <h3>Customer Segments</h3>
+                                    <p class="chart-subtitle">Breakdown of target demographics</p>
+                                </div>
+                            </div>
+                            <div class="chart-container pie-chart-container">
+                                <canvas id="customerDistributionChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Area Sales Bar Chart -->
+                        <div class="chart-card fade-in-up">
+                            <div class="chart-card-header">
+                                <div>
+                                    <h3>Sales Performance by Region</h3>
+                                    <p class="chart-subtitle">Current quarterly revenue in thousand USD</p>
+                                </div>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="areaSalesChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activities & Timeline Area -->
+                <div class="activities-and-datasets fade-in-up">
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <div>
+                                <h3>Location Intelligence Activity Log</h3>
+                                <p class="table-subtitle">Recent system updates and operator actions</p>
+                            </div>
+                            <button class="btn btn-sm btn-outline" id="refreshActivityBtn">
+                                <i class="bi bi-arrow-clockwise"></i> Refresh Log
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Activity Name</th>
+                                        <th>Status</th>
+                                        <th>Modified By</th>
+                                        <th>Date & Time</th>
+                                        <th>Action Taken</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="activityTableBody">
+                                    <tr>
+                                        <td>
+                                            <div class="activity-title-cell">
+                                                <i class="bi bi-file-earmark-spreadsheet-fill text-primary"></i>
+                                                <span>Uploaded Customer Demographic Dataset</span>
+                                            </div>
+                                        </td>
+                                        <td><span class="badge badge-success">Completed</span></td>
+                                        <td>System Admin</td>
+                                        <td>July 13, 2026 06:12 AM</td>
+                                        <td>Parsed 15,248 rows</td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="activity-title-cell">
+                                                <i class="bi bi-cpu-fill text-purple"></i>
+                                                <span>Spatial ML Model Training</span>
+                                            </div>
+                                        </td>
+                                        <td><span class="badge badge-success">Completed</span></td>
+                                        <td>System AI</td>
+                                        <td>July 13, 2026 05:45 AM</td>
+                                        <td>Accuracy score 98.4%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="activity-title-cell">
+                                                <i class="bi bi-file-earmark-pdf-fill text-danger"></i>
+                                                <span>Generated PDF Sales Report</span>
+                                            </div>
+                                        </td>
+                                        <td><span class="badge badge-success">Exported</span></td>
+                                        <td>Jane Doe</td>
+                                        <td>July 12, 2026 04:30 PM</td>
+                                        <td>Downloaded 14 pages</td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <div class="activity-title-cell">
+                                                <i class="bi bi-geo-alt-fill text-warning"></i>
+                                                <span>AI Recommendation Updated</span>
+                                            </div>
+                                        </td>
+                                        <td><span class="badge badge-warning">Updated</span></td>
+                                        <td>Location Engine</td>
+                                        <td>July 12, 2026 11:20 AM</td>
+                                        <td>Recalculated rent factors</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Footer -->
+            <footer class="app-footer">
+                <div class="footer-left">
+                    <p><strong>AI Business Expansion Advisor</strong> • Final Year Project</p>
+                </div>
+                <div class="footer-right">
+                    <span>Version 1.0</span>
+                    <span class="footer-divider">•</span>
+                    <span>&copy; 2026 All Rights Reserved</span>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Modals Section -->
+    <!-- Detailed Location Intelligence Modal -->
+    <div class="modal-wrapper" id="locationDetailsModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-header-title">
+                    <i class="bi bi-map-fill text-primary"></i>
+                    <div>
+                        <h3>Manhattan North Spatial Intelligence Report</h3>
+                        <p>Detailed Multi-Factor Geographic Evaluation Profile</p>
+                    </div>
+                </div>
+                <button class="modal-close-btn" id="closeModalBtn" aria-label="Close modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-info-grid">
+                    <div class="modal-column">
+                        <div class="info-group">
+                            <label>Geographic Coordinates</label>
+                            <p class="value">40.7831&deg; N, 73.9712&deg; W</p>
+                        </div>
+                        <div class="info-group">
+                            <label>Target Demographic Density</label>
+                            <p class="value">High (840 residents / km&sup2;)</p>
+                        </div>
+                        <div class="info-group">
+                            <label>Average Foot Traffic</label>
+                            <p class="value">14,250 pedestrians / day</p>
+                        </div>
+                    </div>
+                    <div class="modal-column">
+                        <div class="info-group">
+                            <label>Average Store Lease Price</label>
+                            <p class="value">$78 / sq. foot annually</p>
+                        </div>
+                        <div class="info-group">
+                            <label>Disposable Income Factor</label>
+                            <p class="value">8.4 / 10 (Excellent)</p>
+                        </div>
+                        <div class="info-group">
+                            <label>Estimated Payback Period</label>
+                            <p class="value">14 Months</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="progress-section">
+                    <h3>Spatial Match Factors</h3>
+                    <div class="factor-progress-item">
+                        <div class="factor-labels">
+                            <span>Demographic Congruence</span>
+                            <span>96%</span>
+                        </div>
+                        <div class="factor-bar-outer">
+                            <div class="factor-bar-inner" style="width: 96%; background: var(--primary);"></div>
+                        </div>
+                    </div>
+                    <div class="factor-progress-item">
+                        <div class="factor-labels">
+                            <span>Competitor Distance Radius</span>
+                            <span>88%</span>
+                        </div>
+                        <div class="factor-bar-outer">
+                            <div class="factor-bar-inner" style="width: 88%; background: var(--success);"></div>
+                        </div>
+                    </div>
+                    <div class="factor-progress-item">
+                        <div class="factor-labels">
+                            <span>Traffic Hotspot Access</span>
+                            <span>92%</span>
+                        </div>
+                        <div class="factor-bar-outer">
+                            <div class="factor-bar-inner" style="width: 92%; background: var(--warning);"></div>
+                        </div>
+                    </div>
+                    <div class="factor-progress-item">
+                        <div class="factor-labels">
+                            <span>Regulatory & Permit Ease</span>
+                            <span>80%</span>
+                        </div>
+                        <div class="factor-bar-outer">
+                            <div class="factor-bar-inner" style="width: 80%; background: var(--purple);"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-summary-box">
+                    <h4><i class="bi bi-lightbulb-fill text-warning"></i> AI Strategic Recommendation</h4>
+                    <p>The system strongly advises securing commercial lease option spaces in the North Manhattan District immediately. The current market window is extremely favorable before competing franchises acquire the available spatial inventory in late Q4 2026.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="closeModalFooterBtn">Close Report</button>
+                <button class="btn btn-primary" id="exportPdfBtn"><i class="bi bi-file-earmark-pdf-fill"></i> Export PDF Report</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- What-If Simulator Modal -->
+    <div class="modal-wrapper" id="simulatorModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-header-title">
+                    <i class="bi bi-sliders text-success"></i>
+                    <div>
+                        <h3>AI Business Expansion Simulator</h3>
+                        <p>Adjust spatial variables to simulate expansion results</p>
+                    </div>
+                </div>
+                <button class="modal-close-btn" id="closeSimModalBtn" aria-label="Close modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="simulator-layout">
+                    <div class="simulator-sliders">
+                        <div class="slider-group">
+                            <div class="slider-labels">
+                                <label for="rentSlider">Monthly Rent Budget</label>
+                                <span id="rentValue">$10,000</span>
+                            </div>
+                            <input type="range" id="rentSlider" min="2000" max="25000" step="500" value="10000">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-labels">
+                                <label for="demographicSlider">Demographic Match</label>
+                                <span id="demographicValue">80%</span>
+                            </div>
+                            <input type="range" id="demographicSlider" min="10" max="100" step="5" value="80">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-labels">
+                                <label for="competitionSlider">Local Competitor Count</label>
+                                <span id="competitionValue">3</span>
+                            </div>
+                            <input type="range" id="competitionSlider" min="0" max="10" step="1" value="3">
+                        </div>
+                    </div>
+
+                    <div class="simulator-results">
+                        <h4>Simulation Projections</h4>
+                        <div class="sim-result-card">
+                            <div class="sim-metric">
+                                <span class="sim-metric-label">Estimated Monthly Revenue</span>
+                                <span class="sim-metric-value" id="simResultRevenue">$185,000</span>
+                            </div>
+                            <div class="sim-metric">
+                                <span class="sim-metric-label">Success Confidence Score</span>
+                                <span class="sim-metric-value" id="simResultScore">94%</span>
+                            </div>
+                        </div>
+                        <p class="sim-disclaimer"><i class="bi bi-info-circle"></i> Simulations utilize neural spatial projections based on current Manhattan Q2 local retail indices.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="resetSimBtn">Reset Variables</button>
+                <button class="btn btn-success" id="applySimBtn">Apply Simulation to Dashboard</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Toast / Notification Panel -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Custom JS -->
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

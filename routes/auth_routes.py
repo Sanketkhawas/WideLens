@@ -118,17 +118,14 @@ def login():
 # ----------------------------
 # Dashboard
 # ----------------------------
+from flask import render_template
 @auth.route("/dashboard")
 @login_required
 def dashboard():
-
-    return f"""
-    <h2>Welcome {current_user.name}</h2>
-
-    <p>You are successfully logged in.</p>
-
-    <a href='/logout'>Logout</a>
-    """
+    return render_template(
+        "dashboard.html",
+        user=current_user
+    )
 
 
 # ----------------------------
