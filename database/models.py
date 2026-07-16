@@ -67,13 +67,10 @@ class Customer(db.Model):
 
     total_spent = db.Column(db.Float)
 
-    # Relationship with Sales
     sales = db.relationship("Sale", backref="customer", lazy=True)
 
     def __repr__(self):
         return f"<Customer {self.customer_name}>"
-
-
 
 # ------------------- Sales Table -------------------
 

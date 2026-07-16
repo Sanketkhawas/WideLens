@@ -13,7 +13,7 @@
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 </head>
 <body>
     <!-- App Container -->
@@ -77,11 +77,11 @@
                 <div class="user-card-mini">
                     <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" alt="Profile" referrerPolicy="no-referrer">
                     <div class="user-info">
-                        <h4>Jane Doe</h4>
-                        <span>SaaS Admin</span>
+                    <h4>{{ user.name }}</h4>
+                    <span>{{ user.email }}</span>
                     </div>
                 </div>
-                <a href="#logout" class="logout-btn" id="logoutBtn">
+                <a href="{{ url_for('auth.logout') }}" class="logout-btn">
                     <i class="bi bi-box-arrow-left"></i>
                     <span>Logout</span>
                 </a>
@@ -168,8 +168,8 @@
                     <div class="header-profile">
                         <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" alt="Jane Doe" referrerPolicy="no-referrer" id="profileImageTrigger">
                         <div class="profile-text">
-                            <span class="profile-name">Jane Doe</span>
-                            <span class="profile-role">Expansion Lead</span>
+                        <span class="profile-name">{{ user.name }}</span>
+                        <span class="profile-role">{{ user.email }}</span>
                         </div>
                     </div>
                 </div>
@@ -181,8 +181,8 @@
                 <!-- Page Title -->
                 <div class="page-title-section">
                     <div class="title-left">
-                        <h1>Business Dashboard</h1>
-                        <p class="subtitle">AI Business Expansion & Location Intelligence System Control Panel</p>
+                        <h1>Welcome Back, {{ user.name }} 👋</h1>
+                        <p class="subtitle">Logged in as {{ user.email }}</p>
                     </div>
                     <nav class="breadcrumb">
                         <ul>
@@ -490,9 +490,9 @@
                                             </div>
                                         </td>
                                         <td><span class="badge badge-success">Exported</span></td>
-                                        <td>Jane Doe</td>
+                                        <td>{{ user.name }}</td>
                                         <td>July 12, 2026 04:30 PM</td>
-                                        <td>Downloaded 14 pages</td>
+                                        <td>Downloaded PDF Report</td>
                                     </tr>
                                     <tr>
                                         <td>
@@ -692,6 +692,6 @@
     <div class="toast-container" id="toastContainer"></div>
 
     <!-- Custom JS -->
-    <script src="/static/js/dashboard.js"></script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 </body>
 </html>
