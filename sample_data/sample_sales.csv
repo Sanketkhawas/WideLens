@@ -1,0 +1,21 @@
+customer_id	product	quantity	amount	sale_date	payment_method
+5	Headphones	4	47369.01	17-05-2026	Cash
+17	Backpack	4	48235.96	09-03-2026	Net Banking
+7	Mouse	4	49759.89	26-06-2026	Credit Card
+17	Watch	1	12771.33	23-04-2026	UPI
+1	Backpack	5	11890.68	28-03-2026	Cash
+3	Laptop	2	3836.32	02-01-2026	UPI
+3	Shoes	2	14284.62	26-03-2026	Debit Card
+18	Headphones	5	29022.48	24-02-2026	Cash
+14	Keyboard	1	5298.08	02-05-2026	Debit Card
+14	Tablet	4	43259.92	01-04-2026	UPI
+4	Laptop	4	36546.57	22-06-2026	UPI
+7	Keyboard	5	22706.37	05-03-2026	Debit Card
+9	Watch	2	43787.05	16-02-2026	UPI
+18	Smartphone	1	32781.17	24-04-2026	Net Banking
+3	Keyboard	2	20617.5	04-01-2026	Debit Card
+13	Laptop	2	19259.17	24-02-2026	Debit Card
+15	Mouse	4	34981.28	09-03-2026	Net Banking
+16	Headphones	2	15187.04	19-06-2026	UPI
+18	Laptop	3	3329.68	29-05-2026	Net Banking
+17	Shoes	2	3315.54	03-05-2026	Net Banking

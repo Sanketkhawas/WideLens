@@ -1,0 +1,21 @@
+customer_name	age	gender	city	area	latitude	longitude	purchase_frequency	total_spent
+Customer 1	21	Female	Amravati	Rajapeth	19.234676	73.906997	4	34481.58
+Customer 2	57	Female	Aurangabad	CIDCO	18.595348	73.609019	8	26257.05
+Customer 3	54	Female	Nagpur	Sitabuldi	19.161322	76.830227	26	43726.42
+Customer 4	41	Female	Pune	Baner	18.966438	79.221885	11	6906.09
+Customer 5	42	Female	Nashik	Gangapur	20.311178	78.246334	24	24052.39
+Customer 6	25	Female	Nagpur	Manish Nagar	20.988214	77.020378	28	19358.48
+Customer 7	22	Male	Pune	Kothrud	20.819205	79.40394	28	13173.96
+Customer 8	37	Female	Nagpur	Manish Nagar	20.407053	75.371409	12	19052.99
+Customer 9	24	Male	Amravati	Badnera	20.10242	74.591271	15	20213.86
+Customer 10	40	Male	Amravati	Camp	19.187144	73.208652	11	21255.91
+Customer 11	56	Female	Nagpur	Sitabuldi	19.13788	76.245003	29	45898.28
+Customer 12	36	Male	Nashik	College Road	19.239883	76.648893	9	37856.66
+Customer 13	43	Male	Nashik	Satpur	21.491977	73.899156	16	6363.65
+Customer 14	29	Male	Nagpur	Dharampeth	20.876238	75.74404	3	20468.83
+Customer 15	53	Female	Aurangabad	Ulkanagari	21.413235	78.595068	1	34653.6
+Customer 16	41	Male	Nagpur	Sadar	19.3805	74.028025	1	47783.16
+Customer 17	52	Male	Amravati	Badnera	20.023045	73.69167	21	16325.35
+Customer 18	29	Female	Amravati	Camp	20.787532	76.505964	25	46276.84
+Customer 19	51	Male	Nagpur	Sadar	18.835603	75.359375	27	40725.19
+Customer 20	35	Male	Pune	Kothrud	18.75696	76.158938	3	48943.26
