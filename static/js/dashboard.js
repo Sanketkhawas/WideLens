@@ -1,673 +1,145 @@
-/**
- * ==========================================
- * AI Business Expansion Advisor - Controller
- * Vanilla JS App Logic & Visualization Engine
- * ==========================================
- */
+/* WideLens dashboard controller */
+(function () {
+  const $ = id => document.getElementById(id);
+  const inr = v => v == null ? '–' : v >= 1e7 ? `₹${(v / 1e7).toFixed(2)} Cr` : v >= 1e5 ? `₹${(v / 1e5).toFixed(2)} L` : `₹${Math.round(v).toLocaleString('en-IN')}`;
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  let S, R, sel = 0, timer, seq = 0;
+  let weights, radius, econ;
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Application State
-    const state = {
-        activePage: 'dashboard',
-        sidebarOpen: false,
-        revenueFilterMonths: 12,
-        simulator: {
-            rent: 10000,
-            demographic: 80,
-            competition: 3
-        },
-        charts: {}
-    };
+  const ECON_FIELDS = [
+    ['capture_rate', 'Capture rate (share of catchment spend won)', 0.01, 1, 0.01],
+    ['coverage', 'File covers this share of real sales', 0.01, 1, 0.01],
+    ['contribution', 'Contribution margin before rent', 0.01, 0.9, 0.01],
+    ['sqft', 'Store size (sq ft)', 100, 20000, 100],
+    ['fitout_per_sqft', 'Fit-out cost (₹/sq ft)', 0, 20000, 100],
+    ['deposit_months', 'Rent deposit (months)', 0, 36, 1],
+  ];
 
-    // DOM Element Selectors
-    const elements = {
-        sidebar: document.getElementById('sidebar'),
-        toggleSidebar: document.getElementById('toggleSidebar'),
-        sidebarOverlay: document.getElementById('sidebarOverlay'),
-        sidebarMenuItems: document.querySelectorAll('.sidebar-menu li'),
-        currentDateTime: document.getElementById('currentDateTime'),
-        notificationBtn: document.getElementById('notificationBtn'),
-        notificationMenu: document.getElementById('notificationMenu'),
-        settingsBtn: document.getElementById('settingsBtn'),
-        logoutBtn: document.getElementById('logoutBtn'),
-        searchInput: document.getElementById('searchInput'),
-        
-        // KPI elements
-        kpiValues: document.querySelectorAll('.kpi-value'),
-        
-        // Modals
-        viewDetailsBtn: document.getElementById('viewDetailsBtn'),
-        simulateBtn: document.getElementById('simulateBtn'),
-        locationDetailsModal: document.getElementById('locationDetailsModal'),
-        closeModalBtn: document.getElementById('closeModalBtn'),
-        closeModalFooterBtn: document.getElementById('closeModalFooterBtn'),
-        simulatorModal: document.getElementById('simulatorModal'),
-        closeSimModalBtn: document.getElementById('closeSimModalBtn'),
-        resetSimBtn: document.getElementById('resetSimBtn'),
-        applySimBtn: document.getElementById('applySimBtn'),
-        
-        // Simulator elements
-        rentSlider: document.getElementById('rentSlider'),
-        rentValue: document.getElementById('rentValue'),
-        demographicSlider: document.getElementById('demographicSlider'),
-        demographicValue: document.getElementById('demographicValue'),
-        competitionSlider: document.getElementById('competitionSlider'),
-        competitionValue: document.getElementById('competitionValue'),
-        simResultRevenue: document.getElementById('simResultRevenue'),
-        simResultScore: document.getElementById('simResultScore'),
-        
-        // Core buttons
-        exportPdfBtn: document.getElementById('exportPdfBtn'),
-        refreshActivityBtn: document.getElementById('refreshActivityBtn'),
-        activityTableBody: document.getElementById('activityTableBody'),
-        toastContainer: document.getElementById('toastContainer')
-    };
+  async function boot() {
+    try {
+      const r = await fetch('/api/analysis');
+      if (!r.ok) { location.href = '/upload'; return; }
+      S = await r.json();
+      weights = Object.fromEntries(Object.entries(S.defaults.weights).map(([k, v]) => [k, Math.round(v * 100)]));
+      radius = S.defaults.radius; econ = { ...S.defaults.econ };
+      $('subtitle').textContent = `${S.filename} · ${S.kpis.customers.toLocaleString('en-IN')} customers` + (S.kpis.period_from ? ` · sales ${S.kpis.period_from} – ${S.kpis.period_to}` : '');
+      WLMap.init(S);
+      buildControls();
+      staticCharts();
+      await rerank();
+    } catch (e) { $('loading').textContent = 'Something went wrong loading the analysis. Try re-uploading your file.'; console.error(e); return; }
+    $('loading').classList.add('hide');
+  }
 
-    // Initialize Dashboard
-    initApp();
+  function staticCharts() {
+    const k = S.kpis;
+    $('notes').innerHTML = S.notes.map(n => `<li>${esc(n)}</li>`).join('');
+    WLCharts.forecast(S); WLCharts.areas(S); WLCharts.segments(S); WLCharts.categories(S); WLCharts.age(S);
+  }
 
-    function initApp() {
-        updateClock();
-        setInterval(updateClock, 1000 * 60); // update every minute
-        
-        setupSidebar();
-        setupDropdowns();
-        setupSearchAnimation();
-        setupModals();
-        setupSimulator();
-        setupExtraInteractions();
-        
-        // Initialize visualizations
-        initCharts();
-        
-        // Animate count numbers
-        animateKPIs();
-        
-        // Show welcome toast
-        showToast('System loaded successfully. Welcome back, Jane!', 'info');
-    }
+  function buildControls() {
+    $('sliders').innerHTML = Object.keys(S.factor_labels).map(k => `
+      <div class="sl"><label>${S.factor_labels[k]}<b id="v_${k}">${weights[k]}</b></label>
+      <input type="range" min="0" max="100" value="${weights[k]}" data-k="${k}"></div>`).join('') +
+      `<div class="sl"><label>Catchment radius (km)<b id="v_radius">${radius}</b></label><input type="range" min="1" max="8" step="0.5" value="${radius}" id="radius"></div>`;
+    $('sliders').querySelectorAll('input[data-k]').forEach(el => el.oninput = () => { weights[el.dataset.k] = +el.value; $('v_' + el.dataset.k).textContent = el.value; schedule(); });
+    $('radius').oninput = e => { radius = +e.target.value; $('v_radius').textContent = radius; schedule(); };
+    $('econ').innerHTML = ECON_FIELDS.map(([k, l, mn, mx, st]) => `<div><label>${l}</label><input type="number" data-e="${k}" min="${mn}" max="${mx}" step="${st}" value="${econ[k]}"></div>`).join('');
+    $('econ').querySelectorAll('input').forEach(el => el.onchange = () => { const v = parseFloat(el.value); if (!isNaN(v)) { econ[el.dataset.e] = v; schedule(); } });
+    $('resetBtn').onclick = () => { buildStateFromDefaults(); buildControls(); rerank(); };
+    $('pdfBtn').onclick = downloadPdf;
+  }
+  function buildStateFromDefaults() {
+    weights = Object.fromEntries(Object.entries(S.defaults.weights).map(([k, v]) => [k, Math.round(v * 100)]));
+    radius = S.defaults.radius; econ = { ...S.defaults.econ };
+  }
+  const body = () => ({ weights, radius, econ });
+  function schedule() { clearTimeout(timer); timer = setTimeout(rerank, 250); }
 
-    // Real-time Clock Function
-    function updateClock() {
-        const now = new Date();
-        const options = { 
-            weekday: 'short', 
-            year: 'numeric', 
-            month: 'short', 
-            day: 'numeric', 
-            hour: '2-digit', 
-            minute: '2-digit' 
-        };
-        if (elements.currentDateTime) {
-            elements.currentDateTime.textContent = now.toLocaleDateString('en-US', options);
-        }
-    }
+  async function rerank() {
+    const my = ++seq;
+    const r = await fetch('/api/rank', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body()) });
+    if (!r.ok) return;
+    const data = await r.json();
+    if (my !== seq) return;           // a newer request superseded this one
+    R = data; sel = 0; render();
+  }
 
-    // Sidebar Toggles & Menu Selection
-    function setupSidebar() {
-        // Toggle Sidebar on mobile
-        if (elements.toggleSidebar) {
-            elements.toggleSidebar.addEventListener('click', () => {
-                state.sidebarOpen = !state.sidebarOpen;
-                elements.sidebar.classList.toggle('show', state.sidebarOpen);
-                elements.sidebarOverlay.classList.toggle('show', state.sidebarOpen);
-            });
-        }
+  async function downloadPdf() {
+    const b = $('pdfBtn'); b.textContent = 'Building PDF…'; b.disabled = true;
+    try {
+      const r = await fetch('/api/report.pdf', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body()) });
+      if (!r.ok) throw new Error(r.status);
+      const url = URL.createObjectURL(await r.blob());
+      const a = document.createElement('a'); a.href = url; a.download = 'WideLens_Nagpur_Expansion_Report.pdf'; a.click(); URL.revokeObjectURL(url);
+    } catch (e) { alert('Could not build the PDF.'); }
+    b.textContent = '⬇ PDF report'; b.disabled = false;
+  }
 
-        // Overlay backdrop click to close
-        if (elements.sidebarOverlay) {
-            elements.sidebarOverlay.addEventListener('click', () => {
-                state.sidebarOpen = false;
-                elements.sidebar.classList.remove('show');
-                elements.sidebarOverlay.classList.remove('show');
-            });
-        }
+  function render() {
+    const recs = R.recommendations;
+    renderHero(); renderKpis(); renderTable();
+    WLCharts.rank(recs, S.factor_labels);
+    WLMap.showRecs(recs, R.radius, sel, pick);
+    $('insights').innerHTML = R.insights.map(t => `<li>${esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')}</li>`).join('');
+    $('road').innerHTML = R.roadmap.map(p => `<li><b>${esc(p.area)}</b> - score ${p.score.toFixed(0)}, ≈ ${inr(p.monthly_revenue)}/month, payback ${p.payback_months ? p.payback_months.toFixed(0) + ' months' : 'n/a'}</li>`).join('') || '<li>No site pays back within 5 years on these assumptions.</li>';
+    $('roadNote').textContent = R.roadmap_note || '';
+  }
 
-        // Menu selection triggers
-        elements.sidebarMenuItems.forEach(item => {
-            item.addEventListener('click', (e) => {
-                elements.sidebarMenuItems.forEach(i => i.classList.remove('active'));
-                item.classList.add('active');
-                
-                const pageName = item.getAttribute('data-page');
-                state.activePage = pageName;
-                
-                // Show notification feedback
-                showToast(`Switched view to ${item.querySelector('span').textContent}`, 'info');
-                
-                // Close sidebar on mobile after clicking
-                if (window.innerWidth <= 991) {
-                    state.sidebarOpen = false;
-                    elements.sidebar.classList.remove('show');
-                    elements.sidebarOverlay.classList.remove('show');
-                }
-            });
-        });
-    }
+  function pick(i) { sel = i; renderHero(); highlightRow(); WLMap.focus(R.recommendations[i], R.radius); }
 
-    // Action Dropdowns (Notification Tray)
-    function setupDropdowns() {
-        if (elements.notificationBtn) {
-            elements.notificationBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                elements.notificationMenu.classList.toggle('show');
-            });
-        }
+  function renderHero() {
+    const r = R.recommendations[sel], isTop = sel === 0;
+    const rb = r.robust_top1;
+    const why = r.why.map(w => `<div class="wrow"><span>${esc(w.label)}</span><div class="bar"><i style="width:${Math.min(100, w.points / Math.max(r.score, 1) * 100)}%"></i></div><b>${w.points.toFixed(0)}</b></div>`).join('');
+    const pay = r.payback_months ? `${r.payback_months.toFixed(0)} months` : 'Not viable';
+    $('hero').innerHTML = `
+      <div>
+        <span class="tag">${isTop ? 'RECOMMENDED NEXT STORE' : 'OPTION #' + r.rank}</span>
+        <h2>${esc(r.area)}, Nagpur</h2>
+        <p class="sub">Expansion score <b>${r.score.toFixed(0)}/100</b> · ${r.dist_to_store_km.toFixed(1)} km from your nearest store</p>
+        <div class="stats">
+          <div class="stat"><b>${r.catchment_customers.toLocaleString('en-IN')}</b><span>customers within ${R.radius} km</span></div>
+          <div class="stat"><b>${r.unserved_customers.toLocaleString('en-IN')}</b><span>of them not near any store</span></div>
+          <div class="stat"><b>${inr(r.monthly_revenue)}</b><span>est. monthly revenue</span></div>
+          <div class="stat"><b>₹${Math.round(r.avg_rent)}/sq ft</b><span>rent (${inr(r.monthly_rent)}/month)</span></div>
+          <div class="stat"><b>${r.competitor_count}</b><span>competitors in area</span></div>
+          <div class="stat"><b>${pay}</b><span>estimated payback</span></div>
+        </div>
+        <div class="chips">${R.recommendations.slice(0, 5).map((x, i) => `<span class="chip" data-i="${i}">#${x.rank} ${esc(x.area)}</span>`).join('')}</div>
+      </div>
+      <div class="why">
+        <h4 style="margin-top:0">Top reasons</h4>${why}
+        <div class="robust"><b>Robustness:</b> ranks #1 in <b>${(rb * 100).toFixed(0)}%</b> and top-3 in <b>${(r.robust_top3 * 100).toFixed(0)}%</b> of 500 randomly re-weighted scenarios.
+          ${rb >= 0.6 ? '<span class="pill g">Clear winner</span>' : rb >= 0.25 ? '<span class="pill a">Close call</span>' : '<span class="pill r">Not a stable #1</span>'}</div>
+      </div>`;
+    $('hero').querySelectorAll('.chip').forEach(c => c.onclick = () => pick(+c.dataset.i));
+  }
 
-        // Click outside of dropdowns closes them
-        document.addEventListener('click', () => {
-            if (elements.notificationMenu) {
-                elements.notificationMenu.classList.remove('show');
-            }
-        });
+  function renderKpis() {
+    const k = S.kpis, cv = R.coverage, f = S.forecast;
+    const items = [
+      ['Customers', k.customers.toLocaleString('en-IN'), `${k.areas_covered} localities`],
+      ['Revenue in file', inr(k.revenue), `avg ${inr(k.avg_spend)} per customer`],
+      [`Beyond ${R.radius} km of a store`, (cv.unserved_share * 100).toFixed(0) + '%', `${cv.unserved_customers.toLocaleString('en-IN')} customers · ${(cv.unserved_revenue_share * 100).toFixed(0)}% of spend`],
+      ['Revenue trend', f ? `${f.monthly_growth_pct >= 0 ? '+' : ''}${f.monthly_growth_pct.toFixed(1)}%/mo` : 'n/a', f ? `peak ${f.peak_month}` : 'add a Sales sheet'],
+    ];
+    $('kpis').innerHTML = items.map(([a, b, c]) => `<div class="kpi"><span>${a}</span><b>${b}</b><small>${c}</small></div>`).join('');
+  }
 
-        // Prevent closing dropdown when clicking inside it
-        if (elements.notificationMenu) {
-            elements.notificationMenu.addEventListener('click', (e) => {
-                e.stopPropagation();
-            });
-        }
+  function renderTable() {
+    const pill = v => v >= 0.6 ? 'g' : v >= 0.25 ? 'a' : 'r';
+    const rows = R.recommendations.map((r, i) => `<tr data-i="${i}" class="${i === sel ? 'sel' : ''}">
+      <td><b>${r.rank}</b></td><td><b>${esc(r.area)}</b></td>
+      <td class="n"><div style="display:flex;gap:8px;align-items:center;justify-content:flex-end"><b>${r.score.toFixed(0)}</b><div class="bar" style="width:70px"><i style="width:${r.score}%"></i></div></div></td>
+      <td class="n"><span class="pill ${pill(r.robust_top3)}">${(r.robust_top3 * 100).toFixed(0)}% top-3</span></td>
+      <td class="n">${r.catchment_customers.toLocaleString('en-IN')}</td><td class="n">${r.unserved_customers.toLocaleString('en-IN')}</td>
+      <td class="n">₹${Math.round(r.avg_rent)}</td><td class="n">${r.competitor_count}</td><td class="n">${r.dist_to_store_km.toFixed(1)} km</td>
+      <td class="n">${inr(r.monthly_revenue)}</td><td class="n">${r.payback_months ? r.payback_months.toFixed(0) + ' mo' : 'n/a'}</td></tr>`).join('');
+    $('rankTbl').innerHTML = `<thead><tr><th>#</th><th>Locality</th><th class="n">Score</th><th class="n">Stability</th><th class="n">Customers nearby</th><th class="n">Unserved</th><th class="n">Rent /sq ft</th><th class="n">Rivals</th><th class="n">To nearest store</th><th class="n">Est. revenue /mo</th><th class="n">Payback</th></tr></thead><tbody>${rows}</tbody>`;
+    $('rankTbl').querySelectorAll('tbody tr').forEach(tr => tr.onclick = () => { pick(+tr.dataset.i); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  }
+  function highlightRow() { $('rankTbl').querySelectorAll('tbody tr').forEach((tr, i) => tr.classList.toggle('sel', i === sel)); }
 
-        // Notification clear-all button
-        const clearAllBtn = document.querySelector('.mark-all-read');
-        if (clearAllBtn) {
-            clearAllBtn.addEventListener('click', () => {
-                const list = document.querySelector('.notification-list');
-                if (list) {
-                    list.innerHTML = `
-                        <li style="text-align: center; color: var(--text-muted); padding: 24px;">
-                            <i class="bi bi-bell-slash" style="font-size: 24px;"></i>
-                            <p style="margin-top: 8px;">No new alerts</p>
-                        </li>
-                    `;
-                }
-                const dot = document.querySelector('.badge-dot');
-                if (dot) dot.style.display = 'none';
-                showToast('Notifications cleared', 'success');
-            });
-        }
-    }
-
-    // Interactive Search Filtering (Mock)
-    function setupSearchAnimation() {
-        if (elements.searchInput) {
-            elements.searchInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    const query = elements.searchInput.value.trim();
-                    if (query) {
-                        showToast(`Searching location indices for: "${query}"`, 'info');
-                        elements.searchInput.blur();
-                    }
-                }
-            });
-        }
-    }
-
-    // KPI Increment Animation (Counter)
-    function animateKPIs() {
-        elements.kpiValues.forEach(kpi => {
-            const target = parseInt(kpi.getAttribute('data-value'), 10);
-            if (isNaN(target)) return;
-
-            let current = 0;
-            const duration = 1200; // ms
-            const stepTime = Math.max(Math.floor(duration / (target / 50)), 15);
-            
-            const timer = setInterval(() => {
-                // Determine increment size (accelerate initially)
-                const increment = Math.ceil((target - current) / 10);
-                current += increment;
-                
-                if (current >= target) {
-                    current = target;
-                    clearInterval(timer);
-                }
-                
-                // Format with commas if large
-                kpi.textContent = current.toLocaleString('en-US');
-            }, stepTime);
-        });
-    }
-
-    // Modal Manager Toggles
-    function setupModals() {
-        // Spatial intelligence modal open/close
-        if (elements.viewDetailsBtn) {
-            elements.viewDetailsBtn.addEventListener('click', () => {
-                elements.locationDetailsModal.classList.add('show');
-            });
-        }
-
-        const closeSpatialModal = () => {
-            elements.locationDetailsModal.classList.remove('show');
-        };
-
-        if (elements.closeModalBtn) elements.closeModalBtn.addEventListener('click', closeSpatialModal);
-        if (elements.closeModalFooterBtn) elements.closeModalFooterBtn.addEventListener('click', closeSpatialModal);
-
-        // Simulator modal open/close
-        if (elements.simulateBtn) {
-            elements.simulateBtn.addEventListener('click', () => {
-                elements.simulatorModal.classList.add('show');
-            });
-        }
-
-        if (elements.closeSimModalBtn) {
-            elements.closeSimModalBtn.addEventListener('click', () => {
-                elements.simulatorModal.classList.remove('show');
-            });
-        }
-
-        // Close modal when clicking dark backdrop
-        window.addEventListener('click', (e) => {
-            if (e.target === elements.locationDetailsModal) closeSpatialModal();
-            if (e.target === elements.simulatorModal) elements.simulatorModal.classList.remove('show');
-        });
-    }
-
-    // What-If Simulator Logic & Projections
-    function setupSimulator() {
-        function runSimulation() {
-            const rent = parseInt(elements.rentSlider.value, 10);
-            const demographic = parseInt(elements.demographicSlider.value, 10);
-            const competition = parseInt(elements.competitionSlider.value, 10);
-
-            // Update UI Labels
-            elements.rentValue.textContent = `$${rent.toLocaleString()}`;
-            elements.demographicValue.textContent = `${demographic}%`;
-            elements.competitionValue.textContent = competition;
-
-            // Simple realistic simulated calculation formulas
-            // Higher demographic match and lower competition = higher revenue and higher score
-            // Low rent is nice, but super high rent often implies a premium high-traffic hotspot
-            // Therefore, let's create a bell curve / traffic hotspot value for rent
-            const rentFactor = rent < 5000 ? 0.7 : (rent < 15000 ? 1.0 : 1.25);
-            
-            // Expected revenue base $100k
-            const computedRevenue = Math.round(
-                (100000 + (demographic * 1200) - (competition * 8500)) * rentFactor
-            );
-            
-            // Clamp revenue
-            const finalRevenue = Math.max(45000, Math.min(320000, computedRevenue));
-
-            // Success Score (0-100)
-            // Competitors decrease success chance, demographic match increases it, rent budget availability helps
-            let computedScore = Math.round(
-                (demographic * 0.7) + (30 - (competition * 4)) + (rent > 12000 ? 10 : 0)
-            );
-            computedScore = Math.max(35, Math.min(99, computedScore));
-
-            // Update simulator display values with animation/effects
-            elements.simResultRevenue.textContent = `$${finalRevenue.toLocaleString()}`;
-            elements.simResultScore.textContent = `${computedScore}%`;
-
-            // Change metric text colors based on outcome
-            if (computedScore >= 80) {
-                elements.simResultScore.style.color = 'var(--success)';
-            } else if (computedScore >= 60) {
-                elements.simResultScore.style.color = 'var(--warning)';
-            } else {
-                elements.simResultScore.style.color = 'var(--danger)';
-            }
-
-            // Save variables in state
-            state.simulator.rent = rent;
-            state.simulator.demographic = demographic;
-            state.simulator.competition = competition;
-        }
-
-        // Attach listeners to range sliders
-        if (elements.rentSlider) elements.rentSlider.addEventListener('input', runSimulation);
-        if (elements.demographicSlider) elements.demographicSlider.addEventListener('input', runSimulation);
-        if (elements.competitionSlider) elements.competitionSlider.addEventListener('input', runSimulation);
-
-        // Reset Simulator
-        if (elements.resetSimBtn) {
-            elements.resetSimBtn.addEventListener('click', () => {
-                elements.rentSlider.value = 10000;
-                elements.demographicSlider.value = 80;
-                elements.competitionSlider.value = 3;
-                runSimulation();
-                showToast('Simulator parameters reset', 'info');
-            });
-        }
-
-        // Apply Simulator parameters to live dashboard
-        if (elements.applySimBtn) {
-            elements.applySimBtn.addEventListener('click', () => {
-                // Retrieve computed variables
-                const projectedRevenueText = elements.simResultRevenue.textContent;
-                const projectedScoreText = elements.simResultScore.textContent;
-
-                // Update the AI recommendation card details in dashboard
-                document.getElementById('recExpectedRevenue').textContent = projectedRevenueText;
-                document.getElementById('recConfidence').textContent = projectedScoreText;
-
-                const scoreInt = parseInt(projectedScoreText);
-                document.querySelector('.score-number').textContent = scoreInt;
-
-                // Animate circle progress
-                const circle = document.querySelector('.score-progress');
-                if (circle) {
-                    // formula: stroke-dashoffset = 264 - (264 * scoreInt / 100)
-                    const offset = 264 - (264 * scoreInt / 100);
-                    circle.style.strokeDashoffset = offset;
-                }
-
-                // Close modal
-                elements.simulatorModal.classList.remove('show');
-                showToast('Simulation variables successfully applied to spatial model!', 'success');
-
-                // Prepend an entry to our activity timeline
-                const now = new Date();
-                const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-                const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                
-                prependActivity(
-                    'Simulated Spatial Forecast Run',
-                    'Completed',
-                    'Jane Doe',
-                    `${dateStr} ${timeStr}`,
-                    `Rev: ${projectedRevenueText}, Conf: ${projectedScoreText}`
-                );
-            });
-        }
-    }
-
-    // Add entries to the Recent Activity Log
-    function prependActivity(name, status, user, dateTime, action) {
-        if (!elements.activityTableBody) return;
-        
-        const newRow = document.createElement('tr');
-        newRow.innerHTML = `
-            <td>
-                <div class="activity-title-cell">
-                    <i class="bi bi-sliders text-success"></i>
-                    <span>${name}</span>
-                </div>
-            </td>
-            <td><span class="badge badge-success">${status}</span></td>
-            <td>${user}</td>
-            <td>${dateTime}</td>
-            <td>${action}</td>
-        `;
-        
-        // Add item to top of list
-        elements.activityTableBody.insertBefore(newRow, elements.activityTableBody.firstChild);
-        
-        // Animate row highlight
-        newRow.style.backgroundColor = 'rgba(16, 185, 129, 0.08)';
-        setTimeout(() => {
-            newRow.style.transition = 'background-color 1s ease';
-            newRow.style.backgroundColor = 'transparent';
-        }, 1200);
-    }
-
-    // Additional general event interactions
-    function setupExtraInteractions() {
-        // Export report button mock
-        if (elements.exportPdfBtn) {
-            elements.exportPdfBtn.addEventListener('click', () => {
-                showToast('Generating high-fidelity spatial PDF... please wait.', 'info');
-                setTimeout(() => {
-                    showToast('PDF Export complete! Spatial_Intelligence_Report.pdf downloaded.', 'success');
-                }, 2000);
-            });
-        }
-
-        // Settings warning alert trigger
-        if (elements.settingsBtn) {
-            elements.settingsBtn.addEventListener('click', () => {
-                showToast('Preferences & spatial ML hyperparameters are currently locked by administrator.', 'warning');
-            });
-        }
-
-        // Logout button trigger
-        if (elements.logoutBtn) {
-            elements.logoutBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                showToast('Session logout sequence initiated...', 'error');
-                setTimeout(() => {
-                    showToast('You are currently running in Offline Portfolio mode.', 'info');
-                }, 1500);
-            });
-        }
-
-        // Refresh activity log mock
-        if (elements.refreshActivityBtn) {
-            elements.refreshActivityBtn.addEventListener('click', () => {
-                showToast('Syncing real-time sensor & demographic indexes...', 'info');
-                elements.refreshActivityBtn.disabled = true;
-                elements.refreshActivityBtn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Syncing...';
-                
-                setTimeout(() => {
-                    elements.refreshActivityBtn.disabled = false;
-                    elements.refreshActivityBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Refresh Log';
-                    showToast('Activity log database synchronized with Manhattan Q2 retail registry.', 'success');
-                }, 1200);
-            });
-        }
-    }
-
-    // Chart.js Visualizations Init
-    function initCharts() {
-        // Set globally styled Chart.js options
-        Chart.defaults.font.family = 'Poppins, sans-serif';
-        Chart.defaults.color = '#6B7280';
-        Chart.defaults.scale.grid.color = '#E5E7EB';
-        
-        // 1. Line Chart: Monthly Revenue
-        const revCtx = document.getElementById('monthlyRevenueChart');
-        if (revCtx) {
-            state.charts.revenue = new Chart(revCtx, {
-                type: 'line',
-                data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                    datasets: [
-                        {
-                            label: 'Actual Revenue ($)',
-                            data: [82000, 91000, 105000, 98000, 114000, 125000, 142500, 138000, 151000, 168000, 172000, 185000],
-                            borderColor: '#2563EB',
-                            borderWidth: 3,
-                            backgroundColor: 'rgba(37, 99, 235, 0.05)',
-                            fill: true,
-                            tension: 0.35,
-                            pointBackgroundColor: '#2563EB',
-                            pointHoverRadius: 8,
-                            pointHoverBackgroundColor: '#FFFFFF',
-                            pointHoverBorderColor: '#2563EB',
-                            pointHoverBorderWidth: 3
-                        },
-                        {
-                            label: 'AI Forecasted Trend ($)',
-                            data: [80000, 90000, 100000, 110000, 120000, 130000, 140000, 150000, 160000, 170000, 180000, 195000],
-                            borderColor: '#A78BFA',
-                            borderWidth: 2,
-                            borderDash: [6, 4],
-                            backgroundColor: 'transparent',
-                            fill: false,
-                            tension: 0.1,
-                            pointRadius: 0
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top',
-                            labels: {
-                                boxWidth: 15,
-                                font: { size: 12, weight: 500 }
-                            }
-                        },
-                        tooltip: {
-                            backgroundColor: '#1E293B',
-                            titleColor: '#FFFFFF',
-                            bodyColor: '#FFFFFF',
-                            padding: 12,
-                            cornerRadius: 8,
-                            displayColors: true,
-                            callbacks: {
-                                label: function(context) {
-                                    return ` ${context.dataset.label.split(' ')[0]}: $${context.parsed.y.toLocaleString()}`;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: false,
-                            ticks: {
-                                callback: function(value) {
-                                    return '$' + (value / 1000) + 'k';
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Handle Filter Selection change
-            const filterSelect = document.getElementById('revenueFilter');
-            if (filterSelect) {
-                filterSelect.addEventListener('change', (e) => {
-                    const months = parseInt(e.target.value, 10);
-                    let labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                    let actualData = [82000, 91000, 105000, 98000, 114000, 125000, 142500, 138000, 151000, 168000, 172000, 185000];
-                    let forecastData = [80000, 90000, 100000, 110000, 120000, 130000, 140000, 150000, 160000, 170000, 180000, 195000];
-
-                    if (months === 6) {
-                        labels = labels.slice(6);
-                        actualData = actualData.slice(6);
-                        forecastData = forecastData.slice(6);
-                    }
-
-                    state.charts.revenue.data.labels = labels;
-                    state.charts.revenue.data.datasets[0].data = actualData;
-                    state.charts.revenue.data.datasets[1].data = forecastData;
-                    state.charts.revenue.update();
-                    showToast(`Updated Revenue View: Last ${months} Months`, 'success');
-                });
-            }
-        }
-
-        // 2. Pie Chart: Customer Segments
-        const custCtx = document.getElementById('customerDistributionChart');
-        if (custCtx) {
-            state.charts.customers = new Chart(custCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Young Professionals', 'Students & Gen Z', 'Families', 'Corporate Executives'],
-                    datasets: [{
-                        data: [42, 28, 18, 12],
-                        backgroundColor: [
-                            '#2563EB', // Primary
-                            '#10B981', // Success
-                            '#F59E0B', // Warning
-                            '#8B5CF6'  // Purple
-                        ],
-                        hoverOffset: 8,
-                        borderWidth: 2,
-                        borderColor: '#FFFFFF'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: {
-                                boxWidth: 12,
-                                font: { size: 11, weight: 500 }
-                            }
-                        },
-                        tooltip: {
-                            backgroundColor: '#1E293B',
-                            padding: 10,
-                            callbacks: {
-                                label: function(context) {
-                                    return ` ${context.label}: ${context.parsed}%`;
-                                }
-                            }
-                        }
-                    },
-                    cutout: '70%'
-                }
-            });
-        }
-
-        // 3. Bar Chart: Regional Sales Performance
-        const salesCtx = document.getElementById('areaSalesChart');
-        if (salesCtx) {
-            state.charts.sales = new Chart(salesCtx, {
-                type: 'bar',
-                data: {
-                    labels: ['Brooklyn', 'Queens', 'Manhattan', 'Bronx', 'Staten Isl.'],
-                    datasets: [{
-                        label: 'Gross Sales ($k)',
-                        data: [124, 98, 248, 72, 45],
-                        backgroundColor: [
-                            'rgba(37, 99, 235, 0.85)',
-                            'rgba(79, 70, 229, 0.85)',
-                            'rgba(16, 185, 129, 0.85)',
-                            'rgba(245, 158, 11, 0.85)',
-                            'rgba(139, 92, 246, 0.85)'
-                        ],
-                        borderRadius: 6,
-                        borderWidth: 0,
-                        barThickness: 24
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: function(value) { return '$' + value + 'k'; }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-    }
-
-    // Toast Notification System
-    function showToast(message, type = 'info') {
-        if (!elements.toastContainer) return;
-
-        const toast = document.createElement('div');
-        toast.className = `toast toast-${type}`;
-        
-        let icon = 'bi-info-circle-fill';
-        if (type === 'success') icon = 'bi-check-circle-fill';
-        if (type === 'error') icon = 'bi-exclamation-octagon-fill';
-        if (type === 'warning') icon = 'bi-exclamation-triangle-fill';
-
-        toast.innerHTML = `
-            <i class="bi ${icon}"></i>
-            <span>${message}</span>
-        `;
-
-        elements.toastContainer.appendChild(toast);
-        
-        // Trigger reflow & show transition
-        setTimeout(() => toast.classList.add('show'), 50);
-
-        // Slide out and remove toast
-        setTimeout(() => {
-            toast.classList.remove('show');
-            setTimeout(() => toast.remove(), 400);
-        }, 4000);
-    }
-});
+  boot();
+})();

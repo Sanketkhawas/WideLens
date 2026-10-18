@@ -1,0 +1,24 @@
+{% extends "layout.html" %}
+{% block title %}Where should your next store go?{% endblock %}
+{% block content %}
+<main class="landing">
+  <p class="eyebrow">Retail expansion intelligence · Nagpur, Maharashtra</p>
+  <h1>Upload your customer sheet.<br>See where your next store should open.</h1>
+  <p class="lead">WideLens turns a customer Excel file into a ranked list of Nagpur localities, a customer heat-map,
+    a revenue forecast and a payback estimate - so the next store goes where the unserved demand is.</p>
+  <div class="cta">
+    {% if current_user.is_authenticated %}
+      <a class="btn big" href="{{ url_for('dash.index') }}">Open dashboard</a>
+    {% else %}
+      <a class="btn big" href="{{ url_for('auth.register') }}">Get started</a>
+      <a class="btn big ghost" href="{{ url_for('auth.login') }}">Log in</a>
+    {% endif %}
+    <a class="btn big ghost" href="{{ url_for('upload.sample_download') }}">Download sample Excel</a>
+  </div>
+  <ol class="steps">
+    <li><b>1 · Upload</b><span>Customers (required), plus optional Sales, Stores and Areas sheets.</span></li>
+    <li><b>2 · Analyse</b><span>Cleaning, segmentation, demand-gap analysis and a seasonal forecast.</span></li>
+    <li><b>3 · Decide</b><span>Ranked sites, robustness check, map, what-if sliders and a PDF report.</span></li>
+  </ol>
+</main>
+{% endblock %}

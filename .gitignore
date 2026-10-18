@@ -29,4 +29,4 @@ uploads/temp/*
 processed_data/
 
 # Logs
-*.log
+*.loguploads/

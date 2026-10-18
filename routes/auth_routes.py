@@ -27,7 +27,7 @@ auth = Blueprint("auth", __name__)
 def register():
 
     if current_user.is_authenticated:
-        return redirect(url_for("auth.dashboard"))
+        return redirect(url_for("dash.index"))
 
     if request.method == "POST":
 
@@ -92,7 +92,7 @@ def register():
 def login():
 
     if current_user.is_authenticated:
-        return redirect(url_for("auth.dashboard"))
+        return redirect(url_for("dash.index"))
 
     if request.method == "POST":
 
@@ -108,7 +108,7 @@ def login():
 
             flash("Login Successful!", "success")
 
-            return redirect(url_for("auth.dashboard"))
+            return redirect(url_for("dash.index"))
 
         flash("Invalid Email or Password.", "danger")
 
@@ -122,10 +122,7 @@ from flask import render_template
 @auth.route("/dashboard")
 @login_required
 def dashboard():
-    return render_template(
-        "dashboard.html",
-        user=current_user
-    )
+    return redirect(url_for("dash.index"))
 
 
 # ----------------------------

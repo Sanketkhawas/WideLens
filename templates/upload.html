@@ -1,0 +1,41 @@
+{% extends "layout.html" %}
+{% block title %}Upload data{% endblock %}
+{% block content %}
+<main class="narrow">
+  <h1>Upload your customer data</h1>
+  <p class="muted">One Excel workbook (.xlsx) or a customers CSV. Column names are matched flexibly (e.g. <code>lat</code>, <code>locality</code>, <code>spend</code>).</p>
+
+  <form class="card upload" method="post" enctype="multipart/form-data">
+    <label class="drop" id="drop">
+      <input type="file" name="file" id="file" accept=".xlsx,.xlsm,.csv">
+      <span class="big">Drop an Excel file here, or click to choose</span>
+      <span class="muted" id="fname">.xlsx · .csv · up to 25 MB</span>
+    </label>
+    <div class="row">
+      <button class="btn" type="submit">Analyse my data</button>
+      <button class="btn ghost" type="submit" name="use_sample" value="1" formnovalidate>Use the Nagpur sample data</button>
+      <a class="btn ghost" href="{{ url_for('upload.sample_download') }}">Download sample / template</a>
+    </div>
+  </form>
+
+  <section class="card">
+    <h3>Workbook format</h3>
+    <table class="tbl">
+      <tr><th>Sheet</th><th>Status</th><th>Columns</th></tr>
+      <tr><td><b>Customers</b></td><td>Required</td><td>customer_id, total_spent <span class="muted">+ customer_name, age, gender, area, city, latitude, longitude, purchase_frequency</span></td></tr>
+      <tr><td><b>Sales</b></td><td>Optional</td><td>customer_id, amount, sale_date <span class="muted">+ sale_id, product, quantity, payment_method</span> → enables trend &amp; forecast</td></tr>
+      <tr><td><b>Stores</b></td><td>Optional</td><td>store_name, area <span class="muted">or</span> latitude, longitude → your existing stores</td></tr>
+      <tr><td><b>Areas</b></td><td>Optional</td><td>area, population, avg_rent (₹/sq ft/month), competitor_count → override locality data</td></tr>
+    </table>
+    <p class="muted small">Missing coordinates are filled from the locality, and missing localities are inferred from coordinates. Without a Stores sheet every locality is treated as unserved.</p>
+  </section>
+</main>
+{% endblock %}
+{% block scripts %}
+<script>
+  const f = document.getElementById('file'), n = document.getElementById('fname'), d = document.getElementById('drop');
+  f.addEventListener('change', () => { n.textContent = f.files[0] ? f.files[0].name : '.xlsx · .csv · up to 25 MB'; });
+  ['dragover','dragenter'].forEach(e => d.addEventListener(e, ev => { ev.preventDefault(); d.classList.add('over'); }));
+  ['dragleave','drop'].forEach(e => d.addEventListener(e, () => d.classList.remove('over')));
+</script>
+{% endblock %}
